@@ -343,7 +343,7 @@ mparams = {
     "log_std_min": -20, 
     "log_std_max": 2,
     "buffer_size": 16384,
-    "batch_size": 16384,
+    "batch_size": 512,
     "tau": 0.001,
     "entropy_lr": 0.0001,
     "policy_lr": 0.0004,
