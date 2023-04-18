@@ -1,2 +1,2 @@
 # soft_actor_critic_pygame
-train a reinforcement learning agent to play my game I wrote in pygame
+code to train a reinforcement learning agent to play a game I wrote in pygame
