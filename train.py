@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import copy
 import torch
@@ -359,30 +360,31 @@ eval_targets = validate_targets(background, generate_groups(dimensions, config),
 
     
 if __name__ == '__main__':
-
-    dpmodel_func = partial(lambda action_bounds, params: DActor(action_bounds, params),
+    mmodels = str(sys.argv[1])
+    if mmodels == "dnn":
+        dpmodel_func = partial(lambda action_bounds, params: DActor(action_bounds, params),
+                                action_bounds=action_bounds, params=mparams)
+        dpoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
+        dvmodel_func = partial(lambda action_dim, action_bounds: DQNetwork(action_dim, action_bounds),
+                                action_dim=action_dim, action_bounds=action_bounds)
+        dvoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
+        ASAC = SAC(dpmodel_func, dpoptimizer_func, dvmodel_func, dvoptimizer_func,
+                dnn_init, dnn_process, dnn_iterate, mparams)
+        
+    elif mmodels == "cnn":
+        cvmodel_func = partial(lambda action_dim, action_bounds: CQNetwork(action_dim, action_bounds),
+                                action_dim=action_dim, action_bounds=action_bounds)
+        cvoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
+        cpoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
+        cpmodel_func = partial(lambda action_bounds, params: CActor(action_bounds, params), 
                             action_bounds=action_bounds, params=mparams)
-    dpoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
-    dvmodel_func = partial(lambda action_dim, action_bounds: DQNetwork(action_dim, action_bounds),
-                            action_dim=action_dim, action_bounds=action_bounds)
-    dvoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
-    DSAC = SAC(dpmodel_func, dpoptimizer_func, dvmodel_func, dvoptimizer_func,
-            dnn_init, dnn_process, dnn_iterate, mparams)
-
-    # cvmodel_func = partial(lambda action_dim, action_bounds: CQNetwork(action_dim, action_bounds),
-    #                         action_dim=action_dim, action_bounds=action_bounds)
-    # cvoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
-    # cpoptimizer_func = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
-    # cpmodel_func = partial(lambda action_bounds, params: CActor(action_bounds, params), 
-    #                        action_bounds=action_bounds, params=mparams)
-    # CSAC = SAC(cpmodel_func, cpoptimizer_func, cvmodel_func, cvoptimizer_func,
-    #             cnn_init, cnn_process, cnn_iterate, mparams)
+        ASAC = SAC(cpmodel_func, cpoptimizer_func, cvmodel_func, cvoptimizer_func,
+                    cnn_init, cnn_process, cnn_iterate, mparams)
     
     sac_results = []
     best_agent, best_eval_score = None, float('-inf')
     for seed in SEEDS:
-        agent = SACT(DSAC, eparams, seed)
-        # agent = SACT(CSAC, eparams, seed)
+        agent = SACT(ASAC, eparams, seed)
     result, final_eval_score, training_time, wallclock_time = agent.train()
     sac_results.append(result)
     if final_eval_score > best_eval_score:

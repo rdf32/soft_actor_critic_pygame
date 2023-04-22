@@ -1,0 +1,14 @@
+# Ignore Python compiled files
+__pycache__/
+
+# Ignore Jupyter Notebook derivative files
+.ipynb_checkpoints/
+
+# Ignore other files and directories as needed
+venv/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg/
+dist/
+build/

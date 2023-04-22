@@ -1,6 +1,8 @@
 import cv2
+import sys
 import torch
 import pygame
+import imageio
 import numpy as np
 from typing import Tuple
 from dataclasses import dataclass
@@ -12,6 +14,7 @@ from train import action_bounds, config, mparams
 from train import screen_height, screen_width
 from models import DActor, CActor
 
+writer = imageio.get_writer('cnngameplay2.gif', mode='I', fps=60)
 np.random.seed(12)
 @dataclass
 class Action:
@@ -23,7 +26,7 @@ def scale(action, dimensions):
 
 def get_action(models):
     if models == "cnn":
-        return actor.select_action(transforms.Resize((128, 128))(torch.FloatTensor(pygame.surfarray.array3d(screen).T / 255.))).squeeze()
+        return actor.select_greedy_action(transforms.Resize((128, 128))(torch.FloatTensor(pygame.surfarray.array3d(screen).T / 255.))).squeeze()
     elif models == "dnn":
         create_masks(mask_surface, targets)
         return actor.select_action(
@@ -31,8 +34,7 @@ def get_action(models):
                 cv2.resize(pygame.surfarray.array3d(mask_surface).T[0, :, :] / 255., (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.)).squeeze()
 
 if __name__ == '__main__':
-
-    models = "dnn"
+    models = str(sys.argv[1])
 
     # Initialize Pygame
     pygame.init()
@@ -87,8 +89,11 @@ if __name__ == '__main__':
             done = True
 
         pygame.display.update()
+        # Append the image to the imageio writer
+        writer.append_data(pygame.surfarray.array3d(screen).transpose((1, 0, 2)))
         clock.tick(60)
         ticks += 1
 
     # Quit Pygame
     pygame.quit()
+    writer.close()
