@@ -331,6 +331,48 @@ class SACT():
                 if done or (step > max_steps): break
         return np.mean(rewards), np.std(rewards)
 
+class Environment():
+    def __init__(self, state_init, process_func, iteration_func):
+        self.state_init = state_init
+        self.process_func = process_func
+        self.iteration_func = iteration_func
+        
+class Evaluator():
+    def __init__(self, path, env):
+        self.path = path
+        self.env = env
+        
+    def interaction_step(self, state, targets):
+        print(np.unique(self.env.process_func(state)))
+        action = self.agent.select_greedy_action(torch.FloatTensor(self.env.process_func(state)))
+        reward, next_state, done = self.env.iteration_func(action, targets)
+        return Experience(state.copy(), action.copy(), reward, next_state.copy(), done)
+    
+    def update_results(self, experience):
+        return experience.next_state.copy(), experience.done
+    
+    def evaluate(self, n_episodes, max_steps):
+        total_rewards = []
+        for _ in tqdm(range(n_episodes)):
+            self.agent = DActor(action_bounds, mparams)
+            self.agent.load_state_dict(torch.load(self.path))
+            rewards = []
+            targets = copy.deepcopy(eval_targets)
+            state, done = self.env.state_init(targets)
+            rewards.append(0)
+            for step in range(max_steps):
+                experience = self.interaction_step(state, targets)
+                state, done = self.update_results(experience)
+                print(experience.reward)
+                rewards[-1] += experience.reward
+                if done or (step == (max_steps - 1)):
+                    total_rewards.append(np.sum(np.array(rewards)))
+                    break
+        return total_rewards
+    
+# devaluation = Evaluator('models/actor_000008_520.pt', Environment(dnn_init, dnn_process, dnn_iterate))
+# devaluation.evaluate(1, 50)
+
 eparams = {
     'nwarmup': 10,
     'tupdate': 40,

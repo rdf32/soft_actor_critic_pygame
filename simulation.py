@@ -112,7 +112,7 @@ def draw_targets(screen, targets):
         for target in group:
             draw_target(background, *generate_target(target))
             draw_mask(mbackground, *generate_target(target))
-    return background, mbackground[:, :, 0].astype(np.float32)
+    return background, mbackground[:, :, 0]
 
 def draw_crosshair(screen, crosshair, location):
     # wow, what a mess - works though lol
