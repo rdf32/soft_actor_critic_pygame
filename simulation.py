@@ -2,7 +2,7 @@ import cv2
 import random 
 import numpy as np
 from dataclasses import dataclass
-from game import sample, ranks
+# from game import sample, ranks
 
 buffer = 10
 
@@ -79,7 +79,7 @@ def draw_target(screen, array, y_off, y_end, x_off, x_end):
     screen[y_off:y_end, x_off:x_end][~array.mask] = array[~array.mask]
     
 def draw_mask(screen, array, y_off, y_end, x_off, x_end):
-    screen[y_off:y_end, x_off:x_end][~array.mask] = np.ones(array[~array.mask].size)
+    screen[y_off:y_end, x_off:x_end][~array.mask] = np.ones(array[~array.mask].size, dtype=np.float32)
 
 def get_mask(target):
     xinds, yinds = np.where(~circular_mask(target.scale, target.scale) == False)
@@ -112,7 +112,7 @@ def draw_targets(screen, targets):
         for target in group:
             draw_target(background, *generate_target(target))
             draw_mask(mbackground, *generate_target(target))
-    return background, mbackground[:, :, 0]
+    return background, mbackground[:, :, 0].astype(np.float32)
 
 def draw_crosshair(screen, crosshair, location):
     # wow, what a mess - works though lol

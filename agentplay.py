@@ -14,7 +14,7 @@ from train import action_bounds, config, mparams
 from train import screen_height, screen_width
 from models import DActor, CActor
 
-writer = imageio.get_writer('cnngameplay2.gif', mode='I', fps=60)
+# writer = imageio.get_writer('cnngameplay2.gif', mode='I', fps=60)
 np.random.seed(12)
 @dataclass
 class Action:
@@ -29,7 +29,7 @@ def get_action(models):
         return actor.select_greedy_action(transforms.Resize((128, 128))(torch.FloatTensor(pygame.surfarray.array3d(screen).T / 255.))).squeeze()
     elif models == "dnn":
         create_masks(mask_surface, targets)
-        return actor.select_action(
+        return actor.select_greedy_action(
             torch.FloatTensor(
                 cv2.resize(pygame.surfarray.array3d(mask_surface).T[0, :, :] / 255., (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.)).squeeze()
 
@@ -90,10 +90,10 @@ if __name__ == '__main__':
 
         pygame.display.update()
         # Append the image to the imageio writer
-        writer.append_data(pygame.surfarray.array3d(screen).transpose((1, 0, 2)))
+        # writer.append_data(pygame.surfarray.array3d(screen).transpose((1, 0, 2)))
         clock.tick(60)
         ticks += 1
 
     # Quit Pygame
     pygame.quit()
-    writer.close()
+    # writer.close()

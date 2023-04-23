@@ -72,7 +72,7 @@ class Experience:
     done: bool
 
 def dnn_init(targets):
-     return draw_targets(background, targets)[1], False
+    return draw_targets(background, targets)[1].astype(np.float32), False
 
 def dnn_iterate(action, targets):
     reward, done = get_reward(targets, scale(action, dimensions))
@@ -80,10 +80,10 @@ def dnn_iterate(action, targets):
     return reward, next_statem, done
 
 def dnn_process(state):
-        return cv2.resize(state, (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.
+    return cv2.resize(state, (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.
 
 def cnn_init(targets):
-     return draw_targets(background, targets)[0], False
+    return draw_targets(background, targets)[0], False
 
 def cnn_iterate(action, targets):
     reward, done = get_reward(targets, scale(action, dimensions))
@@ -92,7 +92,7 @@ def cnn_iterate(action, targets):
     return reward, next_state, done
 
 def cnn_process(state):
-        return cv2.resize(state, (128, 128)).T / 255.
+    return cv2.resize(state, (128, 128)).T / 255.
 
 def unpack(batch, attribute):
     return torch.cat([torch.from_numpy(getattr(sample, attribute).astype(np.float32)).unsqueeze(0) for sample in batch])
