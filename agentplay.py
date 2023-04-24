@@ -14,6 +14,7 @@ from train import action_bounds, config, mparams
 from train import screen_height, screen_width
 from models import DActor, CActor
 
+
 # writer = imageio.get_writer('cnngameplay2.gif', mode='I', fps=60)
 np.random.seed(12)
 @dataclass

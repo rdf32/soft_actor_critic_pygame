@@ -4,6 +4,7 @@ import time
 import copy
 import torch
 import torch.optim as optim
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from itertools import count
@@ -50,7 +51,6 @@ config = {
         "scale": int(.05*screen_width),
         "points": 30
         }
-
 }
 
 @dataclass
