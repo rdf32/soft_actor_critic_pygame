@@ -34,8 +34,28 @@ def get_action(models):
             torch.FloatTensor(
                 cv2.resize(pygame.surfarray.array3d(mask_surface).T[0, :, :] / 255., (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.)).squeeze()
 
+
+
+# def pygame_network():
+#     input_layer = [pygame.Rect(50, 50 + (i*2), 2, 2) for i in range(5)]
+
+
+# def draw_network(screen):
+#     pygame.draw.rect(screen, white, input_rect)
+#     pygame.draw.rect(screen, white, hidden_rect)
+#     pygame.draw.rect(screen, white, output_rect)
+#     pygame.draw.line(screen, black, line_start, line_end, line_width)
+
 if __name__ == '__main__':
+    levels = 2
     models = str(sys.argv[1])
+    white = (255, 255, 255)
+    black = (0, 0, 0)
+    # hidden_rect = pygame.Rect(100, 50, 4, 50)
+    # output_rect = pygame.Rect(150, 50, 4, 50)
+    # line_start = (input_rect.x + input_rect.width // 2, input_rect.y + input_rect.height)
+    # line_end = (hidden_rect.x + hidden_rect.width // 2, hidden_rect.y)
+    # line_width = 2
 
     # Initialize Pygame
     pygame.init()
@@ -49,6 +69,7 @@ if __name__ == '__main__':
     pygame.mouse.set_visible(False)
 
     score = 0
+    level = 1
     targets = generate_groups(screen, config)
 
     if models == "cnn":
@@ -79,15 +100,37 @@ if __name__ == '__main__':
         screen.blit(background_image, (0, 0))
         for group in targets:
             group.draw(screen)
+        # draw_network(screen)
+        input_layer = [pygame.Rect(55, y, 4, 4) for y in [45, 55, 65, 75, 85, 95, 105, 115]]
+        hidden_layer = [pygame.Rect(105, y, 4, 4) for y in [50, 60, 70, 80, 90, 100, 110]]
+        output_layer = [pygame.Rect(155, y, 4, 4) for y in [75, 85]]
+
+        # pygame.draw.rect(screen, white, pygame.Rect(40, 40, 150, 80))
+        for r in input_layer:
+            pygame.draw.rect(screen, black, r)
+        for r in hidden_layer:
+            pygame.draw.rect(screen, black, r)
+        for r in output_layer:
+            pygame.draw.rect(screen, black, r)
 
         crosshair_rect.center = scale(Action(action[1], action[0]), screen)
         screen.blit(crosshair_image, crosshair_rect)
         screen.blit(pygame.font.Font(None, 16).render("Score: " + str(score), True, (255, 255, 255)), (10, 10))
-        screen.blit(pygame.font.Font(None, 16).render("Clicks: " + str(clicks), True, (255, 255, 255)), (100, 10))
+        screen.blit(pygame.font.Font(None, 16).render("Clicks: " + str(clicks), True, (255, 255, 255)), (75, 10))
+        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[0], 3)), True, black), (165, 72))
+        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[1], 3)), True, black), (165, 83))
 
-        if get_count(targets) == 0:
+        
+
+
+        if (get_count(targets) == 0) and (level == levels):
             screen.blit(pygame.font.Font(None, 36).render("YOU WIN!", True, (255, 255, 255)), (.35*screen_height, .35*screen_width))
             done = True
+
+        elif get_count(targets) == 0:
+            targets = generate_groups(screen, config)
+            level += 1
+                
 
         pygame.display.update()
         # Append the image to the imageio writer
