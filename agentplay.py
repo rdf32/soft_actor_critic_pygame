@@ -3,6 +3,7 @@ import sys
 import torch
 import pygame
 import imageio
+import random
 import numpy as np
 from typing import Tuple
 from dataclasses import dataclass
@@ -35,27 +36,12 @@ def get_action(models):
                 cv2.resize(pygame.surfarray.array3d(mask_surface).T[0, :, :] / 255., (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.)).squeeze()
 
 
-
-# def pygame_network():
-#     input_layer = [pygame.Rect(50, 50 + (i*2), 2, 2) for i in range(5)]
-
-
-# def draw_network(screen):
-#     pygame.draw.rect(screen, white, input_rect)
-#     pygame.draw.rect(screen, white, hidden_rect)
-#     pygame.draw.rect(screen, white, output_rect)
-#     pygame.draw.line(screen, black, line_start, line_end, line_width)
-
 if __name__ == '__main__':
     levels = 2
     models = str(sys.argv[1])
     white = (255, 255, 255)
     black = (0, 0, 0)
-    # hidden_rect = pygame.Rect(100, 50, 4, 50)
-    # output_rect = pygame.Rect(150, 50, 4, 50)
-    # line_start = (input_rect.x + input_rect.width // 2, input_rect.y + input_rect.height)
-    # line_end = (hidden_rect.x + hidden_rect.width // 2, hidden_rect.y)
-    # line_width = 2
+    red = (255, 0, 0)
 
     # Initialize Pygame
     pygame.init()
@@ -78,15 +64,27 @@ if __name__ == '__main__':
     elif models == "dnn":
         actor = DActor(action_bounds, mparams)
         actor.load_state_dict(torch.load('models/actor_000008_520.pt'))
+        # actor.load_state_dict(torch.load('actor_000009_520.pt'))
 
     ticks = 0
     running = True
     done = False
     clicks = 0
     action = np.array([0.5, 0.5])
+    ilayerc = [black for _ in range(8)]
+    hlayerc = [black for _ in range(7)]
+    olayerc = [black for _ in range(2)]
+
     while running:
+        if done:
+            ilayerc = [black for _ in range(8)]
+            hlayerc = [black for _ in range(7)]
+            olayerc = [black for _ in range(2)]
         if ticks > 100 and ticks % 10 == 0:
             if not done:
+                ilayerc = [random.choice([black, red]) for _ in range(8)]
+                hlayerc = [random.choice([black, red]) for _ in range(7)]
+                olayerc = [random.choice([black, red]) for _ in range(2)]
                 action = get_action(models)
                 print(action)
                 clicks += 1
@@ -101,30 +99,34 @@ if __name__ == '__main__':
         for group in targets:
             group.draw(screen)
         # draw_network(screen)
-        input_layer = [pygame.Rect(55, y, 4, 4) for y in [45, 55, 65, 75, 85, 95, 105, 115]]
-        hidden_layer = [pygame.Rect(105, y, 4, 4) for y in [50, 60, 70, 80, 90, 100, 110]]
-        output_layer = [pygame.Rect(155, y, 4, 4) for y in [75, 85]]
+        input_layer = [pygame.Rect(20, y, 4, 4) for y in [45, 55, 65, 75, 85, 95, 105, 115]]
+        hidden_layer = [pygame.Rect(60, y, 4, 4) for y in [50, 60, 70, 80, 90, 100, 110]]
+        output_layer = [pygame.Rect(90, y, 4, 4) for y in [75, 85]]
 
-        # pygame.draw.rect(screen, white, pygame.Rect(40, 40, 150, 80))
-        for r in input_layer:
-            pygame.draw.rect(screen, black, r)
-        for r in hidden_layer:
-            pygame.draw.rect(screen, black, r)
-        for r in output_layer:
-            pygame.draw.rect(screen, black, r)
+        for il in input_layer:
+            for hl in hidden_layer:
+                pygame.draw.line(screen, white, (il.x + 4, il.y + 2), (hl.x, hl.y + 2), 1)
+        for il in hidden_layer:
+            for hl in output_layer:
+                pygame.draw.line(screen, white, (il.x + 4, il.y + 2), (hl.x, hl.y + 2), 1)
+
+        for i, r in enumerate(input_layer):
+            pygame.draw.rect(screen, ilayerc[i], r)
+        for i, r in enumerate(hidden_layer):
+            pygame.draw.rect(screen, hlayerc[i], r)
+        for i, r in enumerate(output_layer):
+            pygame.draw.rect(screen, olayerc[i], r)
 
         crosshair_rect.center = scale(Action(action[1], action[0]), screen)
         screen.blit(crosshair_image, crosshair_rect)
         screen.blit(pygame.font.Font(None, 16).render("Score: " + str(score), True, (255, 255, 255)), (10, 10))
         screen.blit(pygame.font.Font(None, 16).render("Clicks: " + str(clicks), True, (255, 255, 255)), (75, 10))
-        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[0], 3)), True, black), (165, 72))
-        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[1], 3)), True, black), (165, 83))
-
-        
+        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[0], 3)), True, black), (96, 72))
+        screen.blit(pygame.font.Font(None, 12).render(str(np.round(action[1], 3)), True, black), (96, 83))
 
 
         if (get_count(targets) == 0) and (level == levels):
-            screen.blit(pygame.font.Font(None, 36).render("YOU WIN!", True, (255, 255, 255)), (.35*screen_height, .35*screen_width))
+            screen.blit(pygame.font.Font(None, 36).render("YOU WIN!", True, (255, 255, 255)), (.35*screen_height, .39*screen_width))
             done = True
 
         elif get_count(targets) == 0:

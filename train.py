@@ -77,10 +77,10 @@ def dnn_init(targets):
 def dnn_iterate(action, targets):
     reward, done = get_reward(targets, scale(action, dimensions))
     _, next_statem = draw_targets(background, targets)
-    return reward, next_statem, done
+    return np.array([reward]), next_statem, np.array([done])
 
 def dnn_process(state):
-    return cv2.resize(state, (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.
+    return (cv2.resize(state, (128, 128)).reshape(32, 32, 4, 4).sum(axis=(2,3)).ravel() / 16.) + np.random.normal(0, .1, 32*32)
 
 def cnn_init(targets):
     return draw_targets(background, targets)[0], False
@@ -89,7 +89,7 @@ def cnn_iterate(action, targets):
     reward, done = get_reward(targets, scale(action, dimensions))
     next_state, _ = draw_targets(background, targets)
     draw_crosshair(next_state, crosshair, scale(action, dimensions))
-    return reward, next_state, done
+    return np.array([reward]), next_state, np.array([done])
 
 def cnn_process(state):
     return cv2.resize(state, (128, 128)).T / 255.
@@ -204,7 +204,7 @@ class SACT():
             self.episode_exploration[-1] += self.policy_model.exploration_ratio
         return experience.next_state, experience.done
 
-    def train(self):
+    def train(self, actor=None, avalue=None, bvalue=None):
         training_start, last_debug_time = time.time(), float('-inf')
         torch.manual_seed(self.seed) ; np.random.seed(self.seed) ; random.seed(self.seed)
 
@@ -214,11 +214,12 @@ class SACT():
         self.evaluation_scores = []        
         self.episode_exploration = []
 
-        self.policy_model = self.sac.pmodel_func()
+        self.policy_model = self.sac.pmodel_func() if actor is None else actor
+        self.online_value_model_a = self.sac.vmodel_func() if avalue is None else avalue
+        self.online_value_model_b = self.sac.vmodel_func() if bvalue is None else bvalue
+
         self.target_value_model_a = self.sac.vmodel_func()
-        self.online_value_model_a = self.sac.vmodel_func()
         self.target_value_model_b = self.sac.vmodel_func()
-        self.online_value_model_b = self.sac.vmodel_func()
         self.update_vnetworks(tau=1.0)
 
         self.policy_optimizer = self.sac.poptimizer_func(self.policy_model, self.sac.params['policy_lr'])
@@ -236,10 +237,11 @@ class SACT():
             for _ in count():
                 state, done = self.update_results(self.interaction_step(state, targets))
                 if len(self.rbuffer.buffer) > (self.rbuffer.batch_size * self.nwarmup):
-                    self.optimize_model(load(random.sample(self.rbuffer.buffer, self.rbuffer.batch_size)))
+                    self.optimize_model(*load(random.sample(self.rbuffer.buffer, self.rbuffer.batch_size)))
                 if np.sum(self.episode_timestep) % self.params['tupdate'] == 0:
                     self.update_vnetworks()
                 if done or (step > self.params['max_steps']): break
+                step += 1
 
             episode_elapsed = time.time() - episode_start
             self.episode_seconds.append(episode_elapsed)
@@ -427,11 +429,11 @@ if __name__ == '__main__':
     best_agent, best_eval_score = None, float('-inf')
     for seed in SEEDS:
         agent = SACT(ASAC, eparams, seed)
-    result, final_eval_score, training_time, wallclock_time = agent.train()
-    sac_results.append(result)
-    if final_eval_score > best_eval_score:
-        best_eval_score = final_eval_score
-        best_agent = agent
+        result, final_eval_score, training_time, wallclock_time = agent.train()
+        sac_results.append(result)
+        if final_eval_score > best_eval_score:
+            best_eval_score = final_eval_score
+            best_agent = agent
     sac_results = np.array(sac_results)
     _ = BEEP()
 
